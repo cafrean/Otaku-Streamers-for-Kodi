@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="plugin.video.otaku-streamers"
+       name="Otaku-Streamers"
+       version="1.0"
+       provider-name="tapesync">
+    <requires>
+        <import addon="xbmc.python" version="2.1.0"/>
+        <import addon="script.module.requests" version="2.4.3"/>
+
+    </requires>
+    <extension point="xbmc.python.pluginsource"
+               library="addon.py">
+        <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <platform>all</platform>
+        <summary lang="en">Otaku-Streamers video plugin</summary>
+        <description lang="en">Otaku-Streamers.com: Watch Anime / Jdrama / Kdrama / Live Actions online for free.
+        </description>
+        <language>en</language>
+        <license></license>
+        <forum></forum>
+        <website></website>
+        <source></source>
+        <email></email>
+    </extension>
+    <extension point="xbmc.python.script" library="account.py">
+        <provides/>
+    </extension>
+</addon>

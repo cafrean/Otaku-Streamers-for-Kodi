@@ -1,0 +1,11 @@
+<settings>
+    <category label="Account">
+        <setting id="username" type="text" label="Username" default=""/>
+        <setting id="password" type="text" label="Password" default="" option="hidden"/>
+
+        <setting type="lsep"/>
+
+        <setting id="button_logout" label="Delete cookie/Log out" type="action"
+                 action="RunScript(plugin.video.otaku-streamers, log_out)"/>
+    </category>
+</settings>
