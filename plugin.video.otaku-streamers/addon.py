@@ -38,37 +38,7 @@ def user_is_logged_in():
         else:
             return False
 
-# ------------------------
-
-
-
-# ------------------------------------------
-# Execution of the script starts here.
-# ------------------------------------------
-
-addon_base_url = sys.argv[0]
-addon_handle = int(sys.argv[1])
-args = urlparse.parse_qs(sys.argv[2][1:])
-xbmcplugin.setContent(addon_handle, 'episodes')
-mode = args.get('mode', None)
-
-# Build file path to the plugins addon_data folder, and image folder.
-__addon__        = xbmcaddon.Addon()
-__addonname__    = __addon__.getAddonInfo('id')
-dataroot = xbmc.translatePath('special://profile/addon_data/%s' % __addonname__).decode('utf-8')
-
-imagefolder = os.path.join(dataroot, "images")
-
-# Create image folder if it doesn't exist.
-if not os.path.exists(imagefolder):
-    os.makedirs(imagefolder)
-
-# Create list of categories
-if mode is None:
-
-    # Performs the first attempt to log in.
-    # Categories are only displayed if user is successfully logged in, to avoid confusion.
-    if user_is_logged_in():
+def display_list_categories():
 
         # Create the file paths to the folder art.
         folder_art_base = xbmc.translatePath('special://home/addons/{0}/resources/images/folder_art'.format(__addonname__)).decode('utf-8')
@@ -76,7 +46,7 @@ if mode is None:
         anime_folder = os.path.join(folder_art_base, 'animefolder.png')
 
         url = build_url({'mode': 'category', 'categoryname': "anime"})
-        li = xbmcgui.ListItem("Anime", iconImage=anime_folder)
+        li = xbmcgui.ListItem("Test", iconImage=anime_folder)
         li.setProperty('fanart_image', __addon__.getAddonInfo('fanart'))
         xbmcplugin.addDirectoryItem(handle=addon_handle, url=url,
                                     listitem=li, isFolder=True)
@@ -89,8 +59,8 @@ if mode is None:
 
         xbmcplugin.endOfDirectory(addon_handle)
 
-# Create list of available letters
-elif mode[0] == 'category':
+
+def display_list_letters():
     category_name = args['categoryname'][0]
 
     # Load page of selected category.
@@ -108,11 +78,9 @@ elif mode[0] == 'category':
         xbmcplugin.addDirectoryItem(handle=addon_handle, url=url,
                                     listitem=li, isFolder=True)
 
-
     xbmcplugin.endOfDirectory(addon_handle)
 
-# Show the selected list of series.
-elif mode[0] == 'letter':
+def display_list_series():
     category_url = args['categoryurl'][0]
     selected_letter = args['selectedletter'][0]
 
@@ -151,9 +119,7 @@ elif mode[0] == 'letter':
 
     xbmcplugin.endOfDirectory(addon_handle)
 
-# Show the list of episodes for the selected series.
-elif mode[0] == 'series':
-
+def display_list_episodes_movies():
     series_name = args['seriesname'][0]
     series_url = args['seriesurl'][0]
     series_icon = args['seriesicon'][0]
@@ -169,14 +135,12 @@ elif mode[0] == 'series':
         url = build_url({'mode': 'episode', 'episodename': entry.parent.text, 'episodeurl': cleanUrl})
         li = xbmcgui.ListItem(entry.parent.text, iconImage=series_icon)
         li.setProperty('fanart_image', __addon__.getAddonInfo('fanart'))
-        xbmcplugin.addDirectoryItem(handle=addon_handle, url=url,
-                                            listitem=li)
+
+        xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li)
 
     xbmcplugin.endOfDirectory(addon_handle)
 
-# If an episode has been chosen
-elif mode[0] == 'episode':
-
+def start_chosen_video():
     # Perform an additional login-check, in order to properly load the cookie.
     if user_is_logged_in():
 
@@ -195,6 +159,57 @@ elif mode[0] == 'episode':
         xbmc.Player().play(resolve(episode_url))
 
         xbmcplugin.endOfDirectory(addon_handle)
+
+
+# ------------------------
+
+
+
+# ------------------------------------------
+# Execution of the script starts here.
+# ------------------------------------------
+
+addon_base_url = sys.argv[0]
+addon_handle = int(sys.argv[1])
+args = urlparse.parse_qs(sys.argv[2][1:])
+xbmcplugin.setContent(addon_handle, 'episodes')
+mode = args.get('mode', None)
+
+# Build file path to the plugins addon_data folder, and image folder.
+__addon__        = xbmcaddon.Addon()
+__addonname__    = __addon__.getAddonInfo('id')
+dataroot = xbmc.translatePath('special://profile/addon_data/%s' % __addonname__).decode('utf-8')
+
+imagefolder = os.path.join(dataroot, "images")
+
+# Create image folder if it doesn't exist.
+if not os.path.exists(imagefolder):
+    os.makedirs(imagefolder)
+
+# Create list of categories
+if mode is None:
+
+    # Performs the first attempt to log in.
+    # Categories are only displayed if user is successfully logged in, to avoid confusion.
+    if user_is_logged_in():
+        display_list_categories()
+
+# Create list of available letters
+elif mode[0] == 'category':
+    display_list_letters()
+
+# Show the selected list of series.
+elif mode[0] == 'letter':
+    display_list_series()
+
+# Show the list of episodes for the selected series.
+elif mode[0] == 'series':
+    display_list_episodes_movies()
+
+# If an episode has been chosen
+elif mode[0] == 'episode':
+    start_chosen_video()
+
 
 
 
