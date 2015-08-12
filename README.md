@@ -22,7 +22,7 @@ for downloading a prepared .zip-file in the near future, to make it a bit easier
 1. Navigate to "System" -> "Add-ons".
 2. Select "Install from zip file".
 3. Navigate to where you put your zip file.
-4. Select it an press OK.
+4. Select it and press OK.
 
 
 ## Disclaimer
