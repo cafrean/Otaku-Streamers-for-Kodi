@@ -46,7 +46,7 @@ def display_list_categories():
         anime_folder = os.path.join(folder_art_base, 'animefolder.png')
 
         url = build_url({'mode': 'category', 'categoryname': "anime"})
-        li = xbmcgui.ListItem("Test", iconImage=anime_folder)
+        li = xbmcgui.ListItem("Anime", iconImage=anime_folder)
         li.setProperty('fanart_image', __addon__.getAddonInfo('fanart'))
         xbmcplugin.addDirectoryItem(handle=addon_handle, url=url,
                                     listitem=li, isFolder=True)
@@ -132,7 +132,7 @@ def display_list_episodes_movies():
         # Since some URLs contain incompatible unicode characters.
         cleanUrl = entry.parent['href'].encode("ascii", "ignore")
 
-        url = build_url({'mode': 'episode', 'episodename': entry.parent.text, 'episodeurl': cleanUrl})
+        url = build_url({'mode': 'episode', 'seriesname': series_name, 'episodename': entry.parent.text, 'episodeurl': cleanUrl})
         li = xbmcgui.ListItem(entry.parent.text, iconImage=series_icon)
         li.setProperty('fanart_image', __addon__.getAddonInfo('fanart'))
 
@@ -145,6 +145,8 @@ def start_chosen_video():
     if user_is_logged_in():
 
         episode_url = args['episodeurl'][0]
+        episode_nbr = args['episodename'][0]
+        series_name = args['seriesname'][0]
 
         # Check if a "mature content"-warning is displayed.
         response = urllib2.urlopen(episode_url)
@@ -156,9 +158,21 @@ def start_chosen_video():
             new_url = re.findall('"../..(/watch.+?)">', html)
             episode_url = "http://otaku-streamers.com/{0}".format(new_url[0])
 
-        xbmc.Player().play(resolve(episode_url))
+        video_path = resolve(episode_url)
 
-        xbmcplugin.endOfDirectory(addon_handle)
+        # Set meta-data.
+        # TEMP. Change this to *actual* cover-art.
+        li = xbmcgui.ListItem(thumbnailImage=__addon__.getAddonInfo('icon'))
+
+        if episode_nbr == 'Full Movie':
+            li.setInfo('video', {'title': series_name})
+        else:
+            li.setInfo('video', {'title': '{0} - {1}'.format(series_name, episode_nbr)})
+
+
+        xbmc.Player().play(video_path, li)
+
+    xbmcplugin.endOfDirectory(addon_handle)
 
 
 # ------------------------
