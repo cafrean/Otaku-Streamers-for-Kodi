@@ -122,6 +122,12 @@ def log_out():
         print "No cookie was found."
         xbmc.executebuiltin("XBMC.Notification(Not logged in, No cookie has been set., 4000)")
 
+def user_is_logged_in():
+        if log_in():
+            return True
+        else:
+            return False
+
 # -------------------------
 
 

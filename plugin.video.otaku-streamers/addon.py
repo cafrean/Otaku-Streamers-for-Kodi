@@ -1,5 +1,4 @@
 import requests
-
 import urlparse
 import xbmc
 import xbmcgui
@@ -10,7 +9,8 @@ import os
 import sys
 import urllib
 import urllib2
-import account
+import os_account
+import os_images
 from BeautifulSoup import BeautifulSoup
 
 # --- Define functions ---
@@ -22,8 +22,10 @@ def resolve(web_url):
     video_url = re.findall('"file", "(http.+?.mp4)', html)
     return video_url[0]
 
+
 def build_url(query):
     return addon_base_url + '?' + urllib.urlencode(query)
+
 
 def build_tree(url):
     page = requests.get(url)
@@ -32,14 +34,8 @@ def build_tree(url):
     data= page.text.replace("<!-oscontent>", "").replace("<!-oscontentend>", "")
     return BeautifulSoup(data)
 
-def user_is_logged_in():
-        if account.log_in():
-            return True
-        else:
-            return False
 
 def display_list_categories():
-
         # Create the file paths to the folder art.
         folder_art_base = xbmc.translatePath('special://home/addons/{0}/resources/images/folder_art'.format(__addonname__)).decode('utf-8')
         drama_folder = os.path.join(folder_art_base, 'dramafolder.png')
@@ -52,10 +48,10 @@ def display_list_categories():
                                     listitem=li, isFolder=True)
 
         url = build_url({'mode': 'category', 'categoryname': "drama"})
-        li = xbmcgui.ListItem("Drama", iconImage= drama_folder)
+        li = xbmcgui.ListItem("Drama", iconImage=drama_folder)
         li.setProperty('fanart_image', __addon__.getAddonInfo('fanart'))
         xbmcplugin.addDirectoryItem(handle=addon_handle, url=url,
-                                listitem=li, isFolder=True)
+                                    listitem=li, isFolder=True)
 
         xbmcplugin.endOfDirectory(addon_handle)
 
@@ -80,7 +76,9 @@ def display_list_letters():
 
     xbmcplugin.endOfDirectory(addon_handle)
 
+
 def display_list_series():
+    print "Display_list_series run!!"
     category_url = args['categoryurl'][0]
     selected_letter = args['selectedletter'][0]
 
@@ -99,50 +97,54 @@ def display_list_series():
         if tag is not None:
             # Since some titles and URLs contain incompatible unicode characters.
             seriesName = entry.text.encode("ascii", "ignore")
-            seriesUrl = entry.find('a')['href'].encode("ascii", "ignore")
+            series_url = entry.find('a')['href'].encode("ascii", "ignore")
 
-            # Check if cover-art/thumbnail is available
-            imageName = seriesName.replace("/", "")
-            imageUri = os.path.join(imagefolder, imageName + ".jpg")
+            icon = os_images.get_poster_image(seriesName)
 
-            # If an image exists for this particular series; store the URI.
-            if os.path.exists(imageUri):
-                icon = imageUri
-            else:
-                icon = "DefaultVideo.png"
-
-            url = build_url({'mode': 'series', 'seriesname': seriesName, 'seriesurl': seriesUrl, 'seriesicon': icon})
-            li = xbmcgui.ListItem(seriesName, iconImage=imageUri)
+            url = build_url({'mode': 'series', 'seriesname': seriesName, 'seriesurl': series_url, 'seriesicon': icon})
+            li = xbmcgui.ListItem(seriesName, iconImage=icon)
+            li.setThumbnailImage(icon)
+            li.setIconImage(icon)
             li.setProperty('fanart_image', __addon__.getAddonInfo('fanart'))
             xbmcplugin.addDirectoryItem(handle=addon_handle, url=url,
                                     listitem=li, isFolder=True)
 
+    xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
+
     xbmcplugin.endOfDirectory(addon_handle)
 
+
 def display_list_episodes_movies():
+    print "Display_list_episodes_movies run!!"
+
     series_name = args['seriesname'][0]
     series_url = args['seriesurl'][0]
-    series_icon = args['seriesicon'][0]
 
     tree = build_tree(series_url)
 
-    rows = tree.findAll('a', text=re.compile("Episode [0-9]|Full Movie"))
+    # Get image.
+    os_images.download_poster_image(series_name, series_url)
+    icon = os_images.get_poster_image(series_name)
+
+    # Get the URL for all episodes/movies
+    rows = tree.findAll("a", {"href" : re.compile("http://otaku-streamers.com/watch/")})
 
     for entry in rows:
         # Since some URLs contain incompatible unicode characters.
-        cleanUrl = entry.parent['href'].encode("ascii", "ignore")
+        cleanUrl = entry['href'].encode("ascii", "ignore")
 
         url = build_url({'mode': 'episode', 'seriesname': series_name, 'episodename': entry.parent.text, 'episodeurl': cleanUrl})
-        li = xbmcgui.ListItem(entry.parent.text, iconImage=series_icon)
+        li = xbmcgui.ListItem(entry.parent.text, iconImage=icon)
         li.setProperty('fanart_image', __addon__.getAddonInfo('fanart'))
 
         xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li)
 
     xbmcplugin.endOfDirectory(addon_handle)
 
+
 def start_chosen_video():
     # Perform an additional login-check, in order to properly load the cookie.
-    if user_is_logged_in():
+    if os_account.user_is_logged_in():
 
         episode_url = args['episodeurl'][0]
         episode_nbr = args['episodename'][0]
@@ -158,18 +160,18 @@ def start_chosen_video():
             new_url = re.findall('"../..(/watch.+?)">', html)
             episode_url = "http://otaku-streamers.com/{0}".format(new_url[0])
 
+        # Get URL to file.
         video_path = resolve(episode_url)
 
         # Set meta-data.
-        # TEMP. Change this to *actual* cover-art.
-        li = xbmcgui.ListItem(thumbnailImage=__addon__.getAddonInfo('icon'))
+        li = xbmcgui.ListItem(thumbnailImage=os_images.get_poster_image(series_name))
 
         if episode_nbr == 'Full Movie':
             li.setInfo('video', {'title': series_name})
         else:
             li.setInfo('video', {'title': '{0} - {1}'.format(series_name, episode_nbr)})
 
-
+        # Start video playback.
         xbmc.Player().play(video_path, li)
 
     xbmcplugin.endOfDirectory(addon_handle)
@@ -205,7 +207,7 @@ if mode is None:
 
     # Performs the first attempt to log in.
     # Categories are only displayed if user is successfully logged in, to avoid confusion.
-    if user_is_logged_in():
+    if os_account.user_is_logged_in():
         display_list_categories()
 
 # Create list of available letters
