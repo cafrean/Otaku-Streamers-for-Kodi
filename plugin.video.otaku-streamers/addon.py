@@ -36,24 +36,24 @@ def build_tree(url):
 
 
 def display_list_categories():
-        # Create the file paths to the folder art.
-        folder_art_base = xbmc.translatePath('special://home/addons/{0}/resources/images/folder_art'.format(__addonname__)).decode('utf-8')
-        drama_folder = os.path.join(folder_art_base, 'dramafolder.png')
-        anime_folder = os.path.join(folder_art_base, 'animefolder.png')
+    # Create the file paths to the folder art.
+    folder_art_base = xbmc.translatePath('special://home/addons/{0}/resources/images/folder_art'.format(__addonname__)).decode('utf-8')
+    drama_folder = os.path.join(folder_art_base, 'dramafolder.png')
+    anime_folder = os.path.join(folder_art_base, 'animefolder.png')
 
-        url = build_url({'mode': 'category', 'categoryname': "anime"})
-        li = xbmcgui.ListItem("Anime", iconImage=anime_folder)
-        li.setProperty('fanart_image', __addon__.getAddonInfo('fanart'))
-        xbmcplugin.addDirectoryItem(handle=addon_handle, url=url,
-                                    listitem=li, isFolder=True)
+    url = build_url({'mode': 'category', 'categoryname': "anime"})
+    li = xbmcgui.ListItem("Anime", iconImage=anime_folder)
+    li.setProperty('fanart_image', __addon__.getAddonInfo('fanart'))
+    xbmcplugin.addDirectoryItem(handle=addon_handle, url=url,
+                                listitem=li, isFolder=True)
 
-        url = build_url({'mode': 'category', 'categoryname': "drama"})
-        li = xbmcgui.ListItem("Drama", iconImage=drama_folder)
-        li.setProperty('fanart_image', __addon__.getAddonInfo('fanart'))
-        xbmcplugin.addDirectoryItem(handle=addon_handle, url=url,
-                                    listitem=li, isFolder=True)
+    url = build_url({'mode': 'category', 'categoryname': "drama"})
+    li = xbmcgui.ListItem("Drama", iconImage=drama_folder)
+    li.setProperty('fanart_image', __addon__.getAddonInfo('fanart'))
+    xbmcplugin.addDirectoryItem(handle=addon_handle, url=url,
+                                listitem=li, isFolder=True)
 
-        xbmcplugin.endOfDirectory(addon_handle)
+    xbmcplugin.endOfDirectory(addon_handle)
 
 
 def display_list_letters():
@@ -78,7 +78,6 @@ def display_list_letters():
 
 
 def display_list_series():
-    print "Display_list_series run!!"
     category_url = args['categoryurl'][0]
     selected_letter = args['selectedletter'][0]
 
@@ -96,18 +95,18 @@ def display_list_series():
 
         if tag is not None:
             # Since some titles and URLs contain incompatible unicode characters.
-            seriesName = entry.text.encode("ascii", "ignore")
+            series_name = entry.text.encode("ascii", "ignore")
             series_url = entry.find('a')['href'].encode("ascii", "ignore")
 
-            icon = os_images.get_poster_image(seriesName)
+            icon = os_images.get_poster_image(series_name)
 
-            url = build_url({'mode': 'series', 'seriesname': seriesName, 'seriesurl': series_url, 'seriesicon': icon})
-            li = xbmcgui.ListItem(seriesName, iconImage=icon)
+            url = build_url({'mode': 'series', 'seriesname': series_name, 'seriesurl': series_url, 'seriesicon': icon})
+            li = xbmcgui.ListItem(series_name, iconImage=icon)
             li.setThumbnailImage(icon)
             li.setIconImage(icon)
             li.setProperty('fanart_image', __addon__.getAddonInfo('fanart'))
             xbmcplugin.addDirectoryItem(handle=addon_handle, url=url,
-                                    listitem=li, isFolder=True)
+                                        listitem=li, isFolder=True)
 
     xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
 
@@ -115,8 +114,6 @@ def display_list_series():
 
 
 def display_list_episodes_movies():
-    print "Display_list_episodes_movies run!!"
-
     series_name = args['seriesname'][0]
     series_url = args['seriesurl'][0]
 
@@ -127,7 +124,7 @@ def display_list_episodes_movies():
     icon = os_images.get_poster_image(series_name)
 
     # Get the URL for all episodes/movies
-    rows = tree.findAll("a", {"href" : re.compile("http://otaku-streamers.com/watch/")})
+    rows = tree.findAll("a", {"href": re.compile("http://otaku-streamers.com/watch/")})
 
     for entry in rows:
         # Since some URLs contain incompatible unicode characters.
