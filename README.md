@@ -1,4 +1,4 @@
-#Otaku-Streamers for Kodi 
+# Otaku-Streamers for Kodi 
 
 
 ## Description

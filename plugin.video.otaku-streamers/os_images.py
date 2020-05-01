@@ -32,13 +32,14 @@ def download_poster_image(series_name, series_url):
         response = urllib2.urlopen(series_url)
         html = response.read()
 
-        image_url = re.findall('http:\/\/static.otaku-streamers.com\/aniencyclopedia\/images\/.+?.jpg', html)
+        image_url = re.findall('\/\/static.otaku-streamers.com\/aniencyclopedia\/images\/.+?.jpg', html)
 
         if len(image_url) < 1:
             print "No image could be found for {0} on Otaku-Streamers.".format(series_name)
         else:
             # Download the image
-            print "Fetching image for {0} from URL: {1}".format(series_name, image_url[0])
-            urllib.urlretrieve(image_url[0], "{0}/{1}{2}".format(scrape_folder, series_name, ".jpg"))
+            imgage_url_full = 'https:' + image_url[0]
+            print "Fetching image for {0} from URL: {1}".format(series_name, imgage_url_full)
+            urllib.urlretrieve(imgage_url_full, "{0}/{1}{2}".format(scrape_folder, series_name, ".jpg"))
     else:
         print "Image for {0} already exists".format(series_name)

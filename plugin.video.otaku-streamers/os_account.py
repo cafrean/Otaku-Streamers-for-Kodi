@@ -35,7 +35,7 @@ def get_cookie_path():
 def log_in():
     print 'Trying to log in user...'
 
-    login_url = 'http://otaku-streamers.com/community/login.php?do=login'
+    login_url = 'https://otaku-streamers.com/community/login.php?do=login'
 
     #create cookiejar
     cj = cookielib.LWPCookieJar()
@@ -55,7 +55,7 @@ def log_in():
         print 'cookies loaded, checking if they are still valid...'
 
         #check to see if login cookies still valid
-        response = urllib2.urlopen('http://otaku-streamers.com/community/faq.php')
+        response = urllib2.urlopen('https://otaku-streamers.com/community/faq.php')
         html = response.read()
 
         if 'class="welcomelink"' in html:

@@ -60,16 +60,16 @@ def display_list_letters():
     category_name = args['categoryname'][0]
 
     # Load page of selected category.
-    category_url = 'http://otaku-streamers.com/{0}/'.format(category_name)
+    category_url = 'https://otaku-streamers.com/{0}/'.format(category_name)
     tree = build_tree(category_url)
 
     # Get all letters
     letters = tree.findAll('h1')
 
     # Build the list containing folders for each category/letter.
-    for entry in letters:
-        url = build_url({'mode': 'letter', 'selectedletter': entry.text, 'categoryurl': category_url})
-        li = xbmcgui.ListItem(entry.text, iconImage='DefaultFolder.png')
+    for entry in [letter for letter in letters if all(ord(c) < 128 for c in letter)]:
+        url = build_url({'mode': 'letter', 'selectedletter': entry.text.encode("ascii", "ignore"), 'categoryurl': category_url})
+        li = xbmcgui.ListItem(entry.text.encode("ascii", "ignore"), iconImage='DefaultFolder.png')
         li.setProperty('fanart_image', __addon__.getAddonInfo('fanart'))
         xbmcplugin.addDirectoryItem(handle=addon_handle, url=url,
                                     listitem=li, isFolder=True)
@@ -96,8 +96,7 @@ def display_list_series():
         if tag is not None:
             # Since some titles and URLs contain incompatible unicode characters.
             series_name = entry.text.encode("ascii", "ignore")
-            series_url = entry.find('a')['href'].encode("ascii", "ignore")
-
+            series_url = 'https:' + entry.find('a')['href'].encode("ascii", "ignore")
             icon = os_images.get_poster_image(series_name)
 
             url = build_url({'mode': 'series', 'seriesname': series_name, 'seriesurl': series_url, 'seriesicon': icon})
@@ -124,11 +123,11 @@ def display_list_episodes_movies():
     icon = os_images.get_poster_image(series_name)
 
     # Get the URL for all episodes/movies
-    rows = tree.findAll("a", {"href": re.compile("http://otaku-streamers.com/watch/")})
+    rows = tree.findAll("a", {"href": re.compile("//otaku-streamers.com/watch/")})
 
     for entry in rows:
         # Since some URLs contain incompatible unicode characters.
-        cleanUrl = entry['href'].encode("ascii", "ignore")
+        cleanUrl = 'https:' + entry['href'].encode("ascii", "ignore")
 
         url = build_url({'mode': 'episode', 'seriesname': series_name, 'episodename': entry.parent.text, 'episodeurl': cleanUrl})
         li = xbmcgui.ListItem(entry.parent.text, iconImage=icon)
@@ -155,7 +154,7 @@ def start_chosen_video():
         # If warnings are found: Follow the redirect URL to access the actual video.
         if len(warnings) > 0:
             new_url = re.findall('"../..(/watch.+?)">', html)
-            episode_url = "http://otaku-streamers.com/{0}".format(new_url[0])
+            episode_url = "https://otaku-streamers.com/{0}".format(new_url[0])
 
         # Get URL to file.
         video_path = resolve(episode_url)
@@ -169,7 +168,7 @@ def start_chosen_video():
             li.setInfo('video', {'title': '{0} - {1}'.format(series_name, episode_nbr)})
 
         # Start video playback.
-        xbmc.Player().play(video_path, li)
+        xbmc.Player().play(video_path + '|verifypeer=false', li)
 
     xbmcplugin.endOfDirectory(addon_handle)
 

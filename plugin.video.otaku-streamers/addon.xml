@@ -24,7 +24,7 @@
         <source></source>
         <email></email>
     </extension>
-    <extension point="xbmc.python.script" library="account.py">
+    <extension point="xbmc.python.script" library="os_account.py">
         <provides/>
     </extension>
 </addon>
