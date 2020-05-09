@@ -1,146 +1,92 @@
 import os
-import xbmc
-import xbmcaddon
 import urllib
 import urllib2
 import md5
 import cookielib
 import sys
+from kodi_controls import KodiControls
 
 
-# --- Define variables ---
-
-__addon__        = xbmcaddon.Addon()
-__addonname__    = __addon__.getAddonInfo('id')
-
-# ------------------------
+def _get_cookie_path(data_root):
+    return os.path.join(data_root, 'oscookie')
 
 
-# --- Define functions ---
+def _build_post_data(username, password):
+    password_md5 = md5.md5(password).hexdigest()
+    payload = {'vb_login_username': username, 's': '', 'securitytoken': 'guest', 'do': 'login',
+               'vb_login_md5password': password_md5, 'vb_login_md5password_utf': password_md5}
 
-# Returns the path to the cookie, translated for the OS/platform used.
-def get_cookie_path():
-    cookiepath = 'oscookie'
-    dataroot = xbmc.translatePath('special://profile/addon_data/%s' % __addonname__ ).decode('utf-8')
-
-    # Create addon_data folder if it doesn't exist.
-    if not os.path.exists(dataroot):
-        os.makedirs(dataroot)
-
-    return os.path.join(dataroot, cookiepath)
+    return urllib.urlencode(payload)
 
 
-# Used to log in the user and loading/saving cookies.
-# Big thanks to t0mm0 (https://github.com/t0mm0) for helping with this function!
-def log_in():
-    print 'Trying to log in user...'
-
-    login_url = 'https://otaku-streamers.com/community/login.php?do=login'
-
-    #create cookiejar
-    cj = cookielib.LWPCookieJar()
-
-    #tell urllib2 to handle cookies
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-    urllib2.install_opener(opener)
-
-    cookie_file = get_cookie_path()
-
-    #try to load existing cookies
+def _is_logged_in(cookie_jar, cookie):
     try:
-        #ignore_discard=True loads session cookies too
-
-        cj.load(cookie_file, ignore_discard=True)
-
-        print 'cookies loaded, checking if they are still valid...'
-
-        #check to see if login cookies still valid
+        cookie_jar.load(cookie, ignore_discard=True)
         response = urllib2.urlopen('https://otaku-streamers.com/community/faq.php')
         html = response.read()
 
-        if 'class="welcomelink"' in html:
-            print 'Cookie is valid. No need to log in.'
-            #lets get out of here!
-            return True
-
-    #if cookie file does not exist we just keep going...
-    except IOError:
-        print 'Caught IOError!'
-        pass
-
-    # Get settings and user credentials.
-    settings = xbmcaddon.Addon(id=__addonname__)
-    username = settings.getSetting('username')
-    password = settings.getSetting('password')
-
-    #the onsubmit() javascript does this bit
-    password_md5 = md5.md5(password).hexdigest()
-
-    #build POST data (including hidden form fields)
-    post_data = urllib.urlencode({'vb_login_username': username,
-                                  's': '',
-                                  'securitytoken': 'guest',
-                                  'do': 'login',
-                                  'vb_login_md5password': password_md5,
-                                  'vb_login_md5password_utf': password_md5,
-                                  })
-
-    #POST to login page
-    response = urllib2.urlopen(login_url, post_data)
-
-    #check for login string
-    html = response.read()
-
-    if 'Thank you for logging in, %s.' % username in html:
-        print 'logged in to otaku-streamers as %s.' % username
-        xbmc.executebuiltin("XBMC.Notification(Login successful, Welcome to Otaku-Streamers!, 4000)")
-
-        # Save cookies to disk (ignore_discard=True saves session cookies)
-        cj.save(get_cookie_path(), ignore_discard=True)
-
-        # Perform changes to add-on settings.
-        settings.setSetting(id="current_user", value=username)
-
-        return True
-    else:
-        xbmc.executebuiltin("XBMC.Notification(Login failed, Please try again!, 4000)")
-        print 'login failed'
+        return 'class="welcomelink"' in html
+    except IOError as e:
+        print('Caught IOError: {}').format(e)
         return False
 
 
-# Logs out the user by deleting any set cookies. This is called from the add-on settings.
-def log_out():
-    print 'User requested cookie to be deleted.'
+def _perform_login(kodi, cookie_jar):
+    login_url = 'https://otaku-streamers.com/community/login.php?do=login'
 
-    if(os.path.exists(get_cookie_path())):
-        os.remove(get_cookie_path())
+    credentials = kodi.get_credentials()
+    username = credentials['username']
+    post_data = _build_post_data(username, credentials['password'])
 
-        print "Cookie was deleted."
-        xbmc.executebuiltin("XBMC.Notification(Logged out, Cookie was deleted., 4000)")
+    response = urllib2.urlopen(login_url, post_data)
+    html = response.read()
 
-    else:
-        print "No cookie was found."
-        xbmc.executebuiltin("XBMC.Notification(Not logged in, No cookie has been set., 4000)")
+    if not 'Thank you for logging in, {}.'.format(username) in html:
+        kodi.display_notification('Login failed', 'Please try again!')
+        print('Login failed.')
 
-def user_is_logged_in():
-        if log_in():
-            return True
-        else:
-            return False
+        return False
 
-# -------------------------
+    cookie_jar.save(_get_cookie_path(kodi.get_data_root()), ignore_discard=True)
+
+    kodi.display_notification('Login successful', 'Welcome to Otaku-Streamers!')
+    kodi.set_current_user(username)
+
+    print('Logged in to Otaku-Streamers as {}.'.format(username))
+
+    return True
 
 
+def log_in(kodi):
+    print('Trying to log in user...')
 
-# ------------------------------------------
-# Execution of the script starts here.
-# ------------------------------------------
+    cj = cookielib.LWPCookieJar()
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+    urllib2.install_opener(opener)
+    cookie_file = _get_cookie_path(kodi.get_data_root())
+
+    return _is_logged_in(cj, cookie_file) or _perform_login(kodi, cj)
+
+
+def log_out(argv):
+    kodi = KodiControls(argv[0], argv[1])
+    data_root = kodi.get_data_root()
+    cookie_path = _get_cookie_path(data_root)
+
+    if not os.path.exists(cookie_path):
+        print('No cookie was found.')
+        kodi.display_notification('Not logged in', 'No cookie has been set.')
+        return
+
+    os.remove(cookie_path)
+
+    print('Cookie was deleted.')
+    kodi.display_notification('Logged out', 'Cookie was deleted.')
+
 
 # This part will run if called from add-on settings.
 command = sys.argv[1]
 
 if command == 'log_out':
-    log_out()
-
-
+    log_out(sys.argv)
 
