@@ -1,7 +1,6 @@
 import urllib2
 import urllib
 import os
-import pathlib2
 import re
 
 
@@ -29,7 +28,9 @@ def download_poster_image(poster_folder, series_name, series_url):
         print('No image could be found for {0} on Otaku-Streamers.').format(series_name)
         return
 
-    pathlib2.Path(poster_folder).mkdir(exist_ok=True, parents=True)
+    if not os.path.exists(poster_folder):
+        os.makedirs(poster_folder)
+
     image_url_full = 'https:' + image_url[0]
     urllib.urlretrieve(image_url_full, image_path)
 
