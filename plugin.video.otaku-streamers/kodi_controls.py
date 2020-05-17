@@ -40,6 +40,12 @@ class KodiControls:
     def display_notification(self, header, subtitle):
         xbmc.executebuiltin('XBMC.Notification({},{}, 4000)'.format(header, subtitle))
 
+    def get_user_input(self, label):  
+        kb = xbmc.Keyboard('', label)
+        kb.doModal()
+
+        return kb.getText() if kb.isConfirmed() else ''
+
     def display_entries(self, entries):
         xbmcplugin.setContent(self.addon_handle, 'episodes')
 

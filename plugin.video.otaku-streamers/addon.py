@@ -4,6 +4,7 @@ import re
 import os
 import sys
 import urllib2
+import urllib
 import os_account
 import os_images
 import os_content_provider
@@ -14,6 +15,7 @@ kodi = KodiControls(addon_base_url=sys.argv[0], addon_handle=int(sys.argv[1]))
 args = urlparse.parse_qs(sys.argv[2][1:])
 mode = args.get('mode', None)
 img_provider = os_images.get_image_provider(kodi.get_poster_art_base())
+
 
 if not os_account.log_in(kodi):
     exit(0)
@@ -31,14 +33,26 @@ elif mode[0] == 'category':
 
     kodi.display_entries(letters)
 
-elif mode[0] == 'letter':
+elif mode[0] == 'search':
+    category_name = args['category_name'][0]
     category_url = args['category_url'][0]
-    selected_letter = args['selected_letter'][0]
 
-    soup = build_tree(category_url)
-    series = os_content_provider.get_series_for_letter(soup, selected_letter, img_provider)
+    user_input = kodi.get_user_input('Search for anime/drama titles...')
+    url = category_url.format(urllib.quote(user_input))
 
-    kodi.display_entries(series)
+    soup = build_tree(url)
+    titles = os_content_provider.get_search_results(soup, '.*', img_provider)
+
+    kodi.display_entries(titles)
+
+elif mode[0] == 'search_result':
+    url = args['url'][0]
+    pattern = args['pattern'][0]
+
+    soup = build_tree(url)
+    titles = os_content_provider.get_search_results(soup, pattern, img_provider)
+
+    kodi.display_entries(titles)
 
 elif mode[0] == 'series':
     series_name = args['display_name'][0]
