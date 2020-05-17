@@ -15,7 +15,7 @@ def get_image_provider(poster_folder):
 
 
 def download_poster_image(poster_folder, series_name, series_url):
-    image_path = os.path.join(poster_folder, series_name + '.jpg')
+    image_path = os.path.join(poster_folder, series_name.replace('/', '') + '.jpg')
 
     if os.path.exists(image_path):
         print('Image for {0} already exists').format(series_name)
